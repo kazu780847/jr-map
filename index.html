@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JR東日本 赤字線区マップ (2023年度)</title>
+  
+  <!-- Leaflet CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+    }
+    .wrapper { max-width: 1200px; margin: 0 auto; }
+    header {
+      background: #1e293b;
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      margin-bottom: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    h1 { font-size: 1.1rem; margin: 0; }
+    .legend {
+      display: flex;
+      gap: 12px;
+      font-size: 0.8rem;
+    }
+    .legend-item { display: flex; align-items: center; gap: 4px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 12px;
+    }
+    @media (max-width: 820px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    #map {
+      width: 100%;
+      height: 540px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #0f172a;
+    }
+
+    #detailView {
+      background: #0f172a;
+      border: 2px solid #38bdf8;
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    #detailView h2 { margin: 0 0 4px 0; font-size: 1.1rem; color: #38bdf8; }
+    .stat-row { display: flex; justify-content: space-between; margin: 5px 0; font-size: 0.85rem; }
+    .stat-val { font-weight: bold; }
+
+    .search-input {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid #475569;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+    }
+    .list-box {
+      max-height: 320px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .item-card {
+      background: #0f172a;
+      border: 1px solid #334155;
+      padding: 8px 10px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .item-card:hover, .item-card.active {
+      border-color: #38bdf8;
+      background: #1e293b;
+    }
+    .item-header { display: flex; justify-content: space-between; font-weight: bold; }
+
+    .leaflet-popup-content-wrapper {
+      background: #1e293b !important;
+      color: #f8fafc !important;
+      border-radius: 8px;
+      border: 1px solid #475569;
+    }
+    .leaflet-popup-tip { background: #1e293b !important; }
+  </style>
+</head>
+<body>
+
+  <div class="wrapper">
+    <header>
+      <h1>JR東日本 赤字線区マップ (2023年度)</h1>
+      <div class="legend">
+        <div class="legend-item"><span class="dot" style="background:#ef4444;"></span> 500人未満</div>
+        <div class="legend-item"><span class="dot" style="background:#f97316;"></span> 500〜1,000人</div>
+        <div class="legend-item"><span class="dot" style="background:#eab308;"></span> 1,000〜2,000人</div>
+      </div>
+    </header>
+
+    <div class="main-grid">
+      <div class="panel">
+        <div id="map"></div>
+      </div>
+
+      <div class="panel">
+        <div id="detailView">
+          <h2>路線を選択してください</h2>
+          <div style="font-size:0.85rem; color:#94a3b8;">地図上のピンや線、または下のリストをタップしてください。</div>
+        </div>
+
+        <input type="text" class="search-input" id="searchBox" placeholder="路線名・区間名で絞り込み..." oninput="filterLines()">
+        <div class="list-box" id="itemList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const LINES = [
+      { id:31, line:"久留里線", sec:"久留里〜上総亀山", km:9.6, coef:13580, def:235, pass:64, diff:-92, lat:35.263, lng:140.097, coords:[[35.297,140.076],[35.228,140.117]] },
+      { id:52, line:"津軽線", sec:"中小国〜三厩", km:24.4, coef:13520, def:366, pass:61, diff:-85, lat:41.125, lng:140.515, coords:[[41.059,140.575],[41.192,140.455]] },
+      { id:71, line:"陸羽東線", sec:"鳴子温泉〜最上", km:20.7, coef:13465, def:439, pass:51, diff:-89, lat:38.750, lng:140.616, coords:[[38.744,140.716],[38.755,140.516]] },
+      { id:55, line:"花輪線", sec:"荒屋新町〜鹿角花輪", km:32.1, coef:10916, def:603, pass:62, diff:-93, lat:40.156, lng:140.901, coords:[[40.125,141.011],[40.186,140.791]] },
+      { id:5,  line:"飯山線", sec:"戸狩野沢温泉〜津南", km:30.4, coef:10316, def:891, pass:84, diff:-90, lat:36.964, lng:138.524, coords:[[36.918,138.397],[37.009,138.651]] },
+      { id:59, line:"磐越西線", sec:"野沢〜津川", km:30.8, coef:9738, def:982, pass:102, diff:-91, lat:37.641, lng:139.568, coords:[[37.600,139.670],[37.683,139.466]] },
+      { id:42, line:"水郡線", sec:"常陸大子〜磐城塙", km:25.7, coef:5452, def:521, pass:147, diff:-81, lat:36.854, lng:140.382, coords:[[36.769,140.354],[36.940,140.410]] },
+      { id:65, line:"山田線", sec:"上米内〜宮古", km:92.2, coef:5120, def:1749, pass:71, diff:-90, lat:39.688, lng:141.588, coords:[[39.736,141.222],[39.640,141.954]] },
+      { id:68, line:"米坂線", sec:"小国〜坂町", km:32.4, coef:4524, def:340, pass:86, diff:-90, lat:38.116, lng:139.591, coords:[[38.066,139.750],[38.166,139.433]] },
+      { id:32, line:"気仙沼線", sec:"前谷地〜柳津", km:17.5, coef:4080, def:280, pass:199, diff:-85, lat:38.547, lng:141.253, coords:[[38.520,141.196],[38.575,141.309]] },
+      { id:29, line:"北上線", sec:"ほっとゆだ〜横手", km:25.9, coef:3986, def:553, pass:101, diff:-88, lat:39.309, lng:140.664, coords:[[39.308,140.768],[39.310,140.560]] },
+      { id:49, line:"只見線", sec:"只見〜小出", km:46.8, coef:3732, def:900, pass:121, diff:-67, lat:37.289, lng:139.136, coords:[[37.345,139.317],[37.233,138.955]] },
+      { id:36, line:"五能線", sec:"能代〜深浦", km:63.0, coef:3492, def:1822, pass:241, diff:-68, lat:40.432, lng:139.975, coords:[[40.213,140.027],[40.651,139.923]] },
+      { id:20, line:"大糸線", sec:"白馬〜南小谷", km:10.4, coef:3490, def:352, pass:189, diff:-89, lat:36.731, lng:137.885, coords:[[36.698,137.863],[36.764,137.907]] },
+      { id:69, line:"陸羽西線", sec:"新庄〜余目", km:43.0, coef:3297, def:767, pass:129, diff:-94, lat:38.805, lng:140.100, coords:[[38.761,140.301],[38.850,139.900]] },
+      { id:1,  line:"吾妻線", sec:"長野原草津口〜大前", km:13.3, coef:2870, def:494, pass:260, diff:-67, lat:36.529, lng:138.582, coords:[[36.549,138.650],[36.509,138.514]] },
+      { id:2,  line:"左沢線", sec:"寒河江〜左沢", km:9.0, coef:2087, def:401, pass:782, diff:-42, lat:38.381, lng:140.230, coords:[[38.379,140.280],[38.384,140.180]] },
+      { id:9,  line:"羽越本線", sec:"村上〜鶴岡", km:80.0, coef:945, def:4968, pass:1423, diff:-75, lat:38.476, lng:139.649, coords:[[38.224,139.475],[38.728,139.824]] },
+      { id:30, line:"久留里線", sec:"木更津〜久留里", km:22.6, coef:1107, def:693, pass:1072, diff:-76, lat:35.339, lng:140.002, coords:[[35.381,139.927],[35.297,140.076]] }
+    ];
+
+    function getColor(pass) {
+      if (pass < 500) return '#ef4444';
+      if (pass < 1000) return '#f97316';
+      return '#eab308';
+    }
+
+    const map = L.map('map').setView([38.2, 139.8], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    const markers = {};
+
+    LINES.forEach(item => {
+      const color = getColor(item.pass);
+
+      const poly = L.polyline(item.coords, {
+        color: color,
+        weight: 6,
+        opacity: 0.85
+      }).addTo(map);
+
+      const marker = L.circleMarker([item.lat, item.lng], {
+        radius: 8,
+        fillColor: color,
+        color: '#ffffff',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.95
+      }).addTo(map);
+
+      const popupHtml = `
+        <div style="font-size:0.95rem; font-weight:bold; margin-bottom:4px;">No.${item.id} ${item.line}</div>
+        <div style="font-size:0.8rem; color:#cbd5e1; margin-bottom:6px;">${item.sec}</div>
+        <div style="font-size:0.85rem;">
+          <strong>営業係数:</strong> <span style="color:${color}; font-weight:bold;">${item.coef.toLocaleString()} 円</span><br>
+          <strong>赤字額:</strong> ▲${item.def.toLocaleString()} 百万円<br>
+          <strong>輸送密度:</strong> ${item.pass} 人/日 (${item.diff}%)
+        </div>
+      `;
+      marker.bindPopup(popupHtml);
+      poly.bindPopup(popupHtml);
+
+      const onSelect = () => {
+        selectLine(item);
+        marker.openPopup();
+      };
+      marker.on('click', onSelect);
+      poly.on('click', onSelect);
+
+      markers[item.id] = marker;
+    });
+
+    function selectLine(item) {
+      const color = getColor(item.pass);
+      document.getElementById('detailView').innerHTML = `
+        <h2>${item.line} (No.${item.id})</h2>
+        <div style="font-size:0.85rem; color:#cbd5e1; margin-bottom:6px;">${item.sec} (${item.km}km)</div>
+        <div class="stat-row">
+          <span>営業係数:</span>
+          <span class="stat-val" style="color:${color}; font-size:1.15rem;">${item.coef.toLocaleString()} 円</span>
+        </div>
+        <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:6px;">（100円稼ぐのにかかった費用）</div>
+        <div class="stat-row">
+          <span>年間赤字額:</span>
+          <span class="stat-val">▲${item.def.toLocaleString()} 百万円</span>
+        </div>
+        <div class="stat-row">
+          <span>輸送密度:</span>
+          <span class="stat-val">${item.pass.toLocaleString()} 人/日</span>
+        </div>
+        <div class="stat-row">
+          <span>1987年比:</span>
+          <span class="stat-val" style="color:#ef4444;">${item.diff}%</span>
+        </div>
+      `;
+
+      document.querySelectorAll('.item-card').forEach(c => {
+        c.classList.remove('active');
+        if (c.dataset.id == item.id) {
+          c.classList.add('active');
+          c.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      });
+    }
+
+    function renderList(list) {
+      const box = document.getElementById('itemList');
+      box.innerHTML = '';
+      list.forEach(item => {
+        const color = getColor(item.pass);
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        card.dataset.id = item.id;
+        card.innerHTML = `
+          <div class="item-header">
+            <span>No.${item.id} ${item.line}</span>
+            <span style="color:${color}; font-weight:bold;">${item.coef.toLocaleString()}円</span>
+          </div>
+          <div style="color:#94a3b8; font-size:0.75rem;">${item.sec}</div>
+        `;
+        card.onclick = () => {
+          selectLine(item);
+          map.flyTo([item.lat, item.lng], 8);
+          markers[item.id].openPopup();
+        };
+        box.appendChild(card);
+      });
+    }
+
+    function filterLines() {
+      const q = document.getElementById('searchBox').value.trim();
+      renderList(!q ? LINES : LINES.filter(d => d.line.includes(q) || d.sec.includes(q)));
+    }
+
+    renderList(LINES);
+    selectLine(LINES[0]);
+  </script>
+</body>
+</html>
