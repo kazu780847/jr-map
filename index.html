@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>JR東日本 赤字線区ダッシュボード (全72区間・2023年度)</title>
   
-  <!-- Leaflet CDN -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -64,38 +63,22 @@
       background: #0f172a;
     }
 
-    /* 地図上の番号入りピンアイコン */
-    .num-pin {
+    /* 番号入り軽量ピン */
+    .pin-badge {
       display: flex;
       align-items: center;
       justify-content: center;
+      width: 22px;
+      height: 22px;
       border-radius: 50%;
       color: #ffffff;
-      font-weight: bold;
+      font-weight: 800;
       font-size: 11px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.6);
-      cursor: pointer;
-      user-select: none;
-      transition: transform 0.15s ease;
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.6);
+      text-align: center;
+      line-height: 1;
     }
-    .num-pin:hover {
-      transform: scale(1.25);
-      z-index: 9999 !important;
-    }
-
-    /* 路線名ラベル（ピンの横に常時表示） */
-    .line-label-tooltip {
-      background: rgba(15, 23, 42, 0.85) !important;
-      border: 1px solid #475569 !important;
-      color: #f1f5f9 !important;
-      font-size: 10px !important;
-      font-weight: bold !important;
-      padding: 2px 5px !important;
-      border-radius: 4px !important;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.4) !important;
-      white-space: nowrap !important;
-    }
-    .line-label-tooltip::before { display: none; }
 
     #detailView {
       background: #0f172a;
@@ -167,49 +150,4 @@
       <h1>JR東日本 赤字線区ダッシュボード (全72区間・2023年度)</h1>
       <div class="legend">
         <div class="legend-item"><span class="dot" style="background:#ef4444;"></span> 500人未満</div>
-        <div class="legend-item"><span class="dot" style="background:#f97316;"></span> 500〜1,000人</div>
-        <div class="legend-item"><span class="dot" style="background:#eab308;"></span> 1,000〜2,000人</div>
-      </div>
-    </header>
-
-    <div class="main-grid">
-      <div class="panel">
-        <div id="map"></div>
-      </div>
-
-      <div class="panel">
-        <div id="detailView">
-          <h2>路線を選択してください</h2>
-          <div style="font-size:0.85rem; color:#94a3b8;">地図の番号ピンや路線、または下のリストをタップしてください。</div>
-        </div>
-
-        <div class="controls">
-          <input type="text" class="search-input" id="searchBox" placeholder="路線名・駅名で検索..." oninput="updateList()">
-          <select class="sort-select" id="sortSelect" onchange="updateList()">
-            <option value="coef_desc">営業係数ワースト順</option>
-            <option value="def_desc">赤字額が大きい順</option>
-            <option value="pass_asc">輸送密度が低い順</option>
-            <option value="id_asc">区間番号順 (No.1〜72)</option>
-          </select>
-        </div>
-
-        <div class="list-box" id="itemList"></div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // JR東日本公表 全72区間データ
-    const DATA72 = [
-      { id:1, line:"吾妻線", sec:"長野原草津口〜大前", km:13.3, def:494, coef:2870, rat:3.5, pass:260, diff:-67, lat:36.529, lng:138.582, coords:[[36.549,138.650],[36.509,138.514]] },
-      { id:2, line:"左沢線", sec:"寒河江〜左沢", km:9.0, def:401, coef:2087, rat:4.8, pass:782, diff:-42, lat:38.381, lng:140.230, coords:[[38.379,140.280],[38.384,140.180]] },
-      { id:3, line:"飯山線", sec:"豊野〜飯山", km:19.2, def:685, coef:839, rat:11.9, pass:1398, diff:-58, lat:36.775, lng:138.325, coords:[[36.699,138.286],[36.852,138.365]] },
-      { id:4, line:"飯山線", sec:"飯山〜戸狩野沢温泉", km:8.3, def:307, coef:2695, rat:3.7, pass:414, diff:-81, lat:36.885, lng:138.381, coords:[[36.852,138.365],[36.918,138.397]] },
-      { id:5, line:"飯山線", sec:"戸狩野沢温泉〜津南", km:30.4, def:891, coef:10316, rat:1.0, pass:84, diff:-90, lat:36.964, lng:138.524, coords:[[36.918,138.397],[37.009,138.651]] },
-      { id:6, line:"飯山線", sec:"津南〜越後川口", km:38.8, def:878, coef:2117, rat:4.7, pass:342, diff:-64, lat:37.141, lng:138.763, coords:[[37.009,138.651],[37.273,138.874]] },
-      { id:7, line:"石巻線", sec:"小牛田〜女川", km:44.7, def:1153, coef:978, rat:10.2, pass:940, diff:-71, lat:38.493, lng:141.254, coords:[[38.541,141.065],[38.445,141.442]] },
-      { id:8, line:"羽越本線", sec:"新津〜新発田", km:26.0, def:1085, coef:1346, rat:7.4, pass:1257, diff:-82, lat:37.883, lng:139.225, coords:[[37.820,139.117],[37.947,139.333]] },
-      { id:9, line:"羽越本線", sec:"村上〜鶴岡", km:80.0, def:4968, coef:945, rat:10.6, pass:1423, diff:-75, lat:38.476, lng:139.649, coords:[[38.224,139.475],[38.728,139.824]] },
-      { id:10, line:"羽越本線", sec:"鶴岡〜酒田", km:27.5, def:1675, coef:735, rat:13.6, pass:1736, diff:-72, lat:38.825, lng:139.836, coords:[[38.728,139.824],[38.922,139.849]] },
-      { id:11, line:"羽越本線", sec:"酒田〜羽後本荘", km:62.0, def:2805, coef:1596, rat:6.3, pass:777, diff:-82, lat:39.155, lng:139.951, coords:[[38.922,139.849],[39.387,140.052]] },
-      { id:12, line:"羽越本線", sec:"羽後本荘〜秋田", km:42.8,
+        <div class="legend-item"><span class="dot" style="background:#f97316;"></span> 500〜1,0
