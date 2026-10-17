@@ -58,11 +58,44 @@
 
     #map {
       width: 100%;
-      height: 580px;
+      height: 600px;
       border-radius: 8px;
       border: 1px solid #334155;
       background: #0f172a;
     }
+
+    /* 地図上の番号入りピンアイコン */
+    .num-pin {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      color: #ffffff;
+      font-weight: bold;
+      font-size: 11px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.6);
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.15s ease;
+    }
+    .num-pin:hover {
+      transform: scale(1.25);
+      z-index: 9999 !important;
+    }
+
+    /* 路線名ラベル（ピンの横に常時表示） */
+    .line-label-tooltip {
+      background: rgba(15, 23, 42, 0.85) !important;
+      border: 1px solid #475569 !important;
+      color: #f1f5f9 !important;
+      font-size: 10px !important;
+      font-weight: bold !important;
+      padding: 2px 5px !important;
+      border-radius: 4px !important;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4) !important;
+      white-space: nowrap !important;
+    }
+    .line-label-tooltip::before { display: none; }
 
     #detailView {
       background: #0f172a;
@@ -99,7 +132,7 @@
     }
 
     .list-box {
-      max-height: 330px;
+      max-height: 350px;
       overflow-y: auto;
       padding-right: 4px;
     }
@@ -147,7 +180,7 @@
       <div class="panel">
         <div id="detailView">
           <h2>路線を選択してください</h2>
-          <div style="font-size:0.85rem; color:#94a3b8;">地図のピン・路線、または下のリストをタップしてください。</div>
+          <div style="font-size:0.85rem; color:#94a3b8;">地図の番号ピンや路線、または下のリストをタップしてください。</div>
         </div>
 
         <div class="controls">
@@ -166,7 +199,7 @@
   </div>
 
   <script>
-    // JR東日本公表の全72区間完全データ（2023年度）
+    // JR東日本公表 全72区間データ
     const DATA72 = [
       { id:1, line:"吾妻線", sec:"長野原草津口〜大前", km:13.3, def:494, coef:2870, rat:3.5, pass:260, diff:-67, lat:36.529, lng:138.582, coords:[[36.549,138.650],[36.509,138.514]] },
       { id:2, line:"左沢線", sec:"寒河江〜左沢", km:9.0, def:401, coef:2087, rat:4.8, pass:782, diff:-42, lat:38.381, lng:140.230, coords:[[38.379,140.280],[38.384,140.180]] },
@@ -179,200 +212,4 @@
       { id:9, line:"羽越本線", sec:"村上〜鶴岡", km:80.0, def:4968, coef:945, rat:10.6, pass:1423, diff:-75, lat:38.476, lng:139.649, coords:[[38.224,139.475],[38.728,139.824]] },
       { id:10, line:"羽越本線", sec:"鶴岡〜酒田", km:27.5, def:1675, coef:735, rat:13.6, pass:1736, diff:-72, lat:38.825, lng:139.836, coords:[[38.728,139.824],[38.922,139.849]] },
       { id:11, line:"羽越本線", sec:"酒田〜羽後本荘", km:62.0, def:2805, coef:1596, rat:6.3, pass:777, diff:-82, lat:39.155, lng:139.951, coords:[[38.922,139.849],[39.387,140.052]] },
-      { id:12, line:"羽越本線", sec:"羽後本荘〜秋田", km:42.8, def:1857, coef:673, rat:14.9, pass:1943, diff:-65, lat:39.552, lng:140.091, coords:[[39.387,140.052],[39.716,140.129]] },
-      { id:13, line:"内房線", sec:"館山〜安房鴨川", km:33.5, def:1541, coef:1289, rat:7.8, pass:1381, diff:-70, lat:35.052, lng:139.981, coords:[[34.996,139.860],[35.109,140.103]] },
-      { id:14, line:"越後線", sec:"柏崎〜吉田", km:49.8, def:1046, coef:1332, rat:7.5, pass:629, diff:-66, lat:37.528, lng:138.716, coords:[[37.368,138.560],[37.689,138.873]] },
-      { id:15, line:"奥羽本線", sec:"新庄〜湯沢", km:61.8, def:1581, coef:2544, rat:3.9, pass:291, diff:-93, lat:38.962, lng:140.397, coords:[[38.761,140.301],[39.163,140.493]] },
-      { id:16, line:"奥羽本線", sec:"湯沢〜大曲", km:36.6, def:1650, coef:935, rat:10.7, pass:1578, diff:-71, lat:39.308, lng:140.486, coords:[[39.163,140.493],[39.453,140.479]] },
-      { id:17, line:"奥羽本線", sec:"東能代〜大館", km:47.5, def:3365, coef:1626, rat:6.2, pass:1185, diff:-77, lat:40.246, lng:140.308, coords:[[40.208,140.054],[40.285,140.563]] },
-      { id:18, line:"奥羽本線", sec:"大館〜弘前", km:44.2, def:2533, coef:1591, rat:6.3, pass:948, diff:-77, lat:40.442, lng:140.524, coords:[[40.285,140.563],[40.599,140.485]] },
-      { id:19, line:"大糸線", sec:"信濃大町〜白馬", km:24.6, def:758, coef:857, rat:11.7, pass:770, diff:-71, lat:36.600, lng:137.863, coords:[[36.502,137.863],[36.698,137.863]] },
-      { id:20, line:"大糸線", sec:"白馬〜南小谷", km:10.4, def:352, coef:3490, rat:2.9, pass:189, diff:-89, lat:36.731, lng:137.885, coords:[[36.698,137.863],[36.764,137.907]] },
-      { id:21, line:"大船渡線", sec:"一ノ関〜気仙沼", km:62.0, def:1434, coef:1255, rat:8.0, pass:588, diff:-62, lat:38.917, lng:141.353, coords:[[38.926,141.138],[38.908,141.569]] },
-      { id:22, line:"大湊線", sec:"野辺地〜大湊", km:58.4, def:1004, coef:860, rat:11.6, pass:455, diff:-53, lat:41.074, lng:141.145, coords:[[40.869,141.127],[41.278,141.163]] },
-      { id:23, line:"男鹿線", sec:"追分〜男鹿", km:26.4, def:1132, coef:1161, rat:8.6, pass:1390, diff:-70, lat:39.849, lng:139.957, coords:[[39.814,140.063],[39.885,139.851]] },
-      { id:24, line:"鹿島線", sec:"香取〜鹿島サッカースタジアム", km:17.4, def:813, coef:1024, rat:9.8, pass:1139, diff:-55, lat:35.945, lng:140.584, coords:[[35.897,140.528],[35.992,140.640]] },
-      { id:25, line:"釜石線", sec:"花巻〜遠野", km:46.0, def:1064, coef:837, rat:11.9, pass:756, diff:-63, lat:39.360, lng:141.323, coords:[[39.393,141.118],[39.327,141.528]] },
-      { id:26, line:"釜石線", sec:"遠野〜釜石", km:44.2, def:1124, coef:1591, rat:6.3, pass:411, diff:-77, lat:39.300, lng:141.698, coords:[[39.327,141.528],[39.273,141.868]] },
-      { id:27, line:"烏山線", sec:"宝積寺〜烏山", km:20.4, def:727, coef:1265, rat:7.9, pass:1144, diff:-55, lat:36.642, lng:140.065, coords:[[36.631,139.979],[36.653,140.150]] },
-      { id:28, line:"北上線", sec:"北上〜ほっとゆだ", km:35.2, def:1107, coef:2738, rat:3.7, pass:388, diff:-73, lat:39.295, lng:140.942, coords:[[39.281,141.116],[39.308,140.768]] },
-      { id:29, line:"北上線", sec:"ほっとゆだ〜横手", km:25.9, def:553, coef:3986, rat:2.5, pass:101, diff:-88, lat:39.309, lng:140.664, coords:[[39.308,140.768],[39.310,140.560]] },
-      { id:30, line:"久留里線", sec:"木更津〜久留里", km:22.6, def:693, coef:1107, rat:9.0, pass:1072, diff:-76, lat:35.339, lng:140.002, coords:[[35.381,139.927],[35.297,140.076]] },
-      { id:31, line:"久留里線", sec:"久留里〜上総亀山", km:9.6, def:235, coef:13580, rat:0.7, pass:64, diff:-92, lat:35.263, lng:140.097, coords:[[35.297,140.076],[35.228,140.117]] },
-      { id:32, line:"気仙沼線", sec:"前谷地〜柳津", km:17.5, def:280, coef:4080, rat:2.5, pass:199, diff:-85, lat:38.547, lng:141.253, coords:[[38.520,141.196],[38.575,141.309]] },
-      { id:33, line:"小海線", sec:"小淵沢〜小海", km:48.3, def:1351, coef:1521, rat:6.6, pass:379, diff:-63, lat:35.976, lng:138.399, coords:[[35.864,138.316],[36.088,138.483]] },
-      { id:34, line:"小海線", sec:"小海〜中込", km:17.2, def:665, coef:960, rat:10.4, pass:1065, diff:-53, lat:36.158, lng:138.479, coords:[[36.088,138.483],[36.229,138.476]] },
-      { id:35, line:"五能線", sec:"東能代〜能代", km:3.9, def:212, coef:2073, rat:4.8, pass:769, diff:-78, lat:40.210, lng:140.041, coords:[[40.208,140.054],[40.213,140.027]] },
-      { id:36, line:"五能線", sec:"能代〜深浦", km:63.0, def:1822, coef:3492, rat:2.9, pass:241, diff:-68, lat:40.432, lng:139.975, coords:[[40.213,140.027],[40.651,139.923]] },
-      { id:37, line:"五能線", sec:"深浦〜五所川原", km:58.8, def:1600, coef:1841, rat:5.4, pass:447, diff:-65, lat:40.731, lng:140.185, coords:[[40.651,139.923],[40.811,140.446]] },
-      { id:38, line:"五能線", sec:"五所川原〜川部", km:21.5, def:640, coef:749, rat:13.4, pass:1345, diff:-57, lat:40.732, lng:140.468, coords:[[40.811,140.446],[40.653,140.491]] },
-      { id:39, line:"上越線", sec:"水上〜越後湯沢", km:35.1, def:1569, coef:1133, rat:8.8, pass:1198, diff:-63, lat:36.855, lng:138.904, coords:[[36.776,138.998],[36.935,138.809]] },
-      { id:40, line:"常磐線", sec:"いわき〜原ノ町", km:77.5, def:3123, coef:534, rat:18.7, pass:1731, diff:-75, lat:37.347, lng:140.931, coords:[[37.058,140.892],[37.636,140.970]] },
-      { id:41, line:"水郡線", sec:"常陸大宮〜常陸大子", km:32.2, def:1314, coef:1761, rat:5.7, pass:802, diff:-67, lat:36.657, lng:140.383, coords:[[36.545,140.412],[36.769,140.354]] },
-      { id:42, line:"水郡線", sec:"常陸大子〜磐城塙", km:25.7, def:521, coef:5452, rat:1.8, pass:147, diff:-81, lat:36.854, lng:140.382, coords:[[36.769,140.354],[36.940,140.410]] },
-      { id:43, line:"水郡線", sec:"磐城塙〜安積永盛", km:56.2, def:1064, coef:977, rat:10.2, pass:839, diff:-48, lat:37.150, lng:140.389, coords:[[36.940,140.410],[37.360,140.369]] },
-      { id:44, line:"水郡線", sec:"上菅谷〜常陸太田", km:9.5, def:373, coef:749, rat:13.3, pass:1975, diff:-39, lat:36.500, lng:140.517, coords:[[36.467,140.505],[36.533,140.528]] },
-      { id:45, line:"外房線", sec:"勝浦〜安房鴨川", km:22.4, def:1278, coef:883, rat:11.3, pass:1384, diff:-72, lat:35.131, lng:140.209, coords:[[35.152,140.315],[35.109,140.103]] },
-      { id:46, line:"只見線", sec:"会津若松〜会津坂下", km:21.6, def:442, coef:618, rat:16.2, pass:987, diff:-50, lat:37.532, lng:139.877, coords:[[37.508,139.930],[37.556,139.824]] },
-      { id:47, line:"只見線", sec:"会津坂下〜会津川口", km:39.2, def:865, coef:2765, rat:3.6, pass:206, diff:-61, lat:37.506, lng:139.675, coords:[[37.556,139.824],[37.456,139.526]] },
-      { id:48, line:"只見線", sec:"会津川口〜只見", km:27.6, def:168, coef:1100, rat:9.1, pass:103, diff:-44, lat:37.400, lng:139.422, coords:[[37.456,139.526],[37.345,139.317]] },
-      { id:49, line:"只見線", sec:"只見〜小出", km:46.8, def:900, coef:3732, rat:2.7, pass:121, diff:-67, lat:37.289, lng:139.136, coords:[[37.345,139.317],[37.233,138.955]] },
-      { id:50, line:"中央本線", sec:"辰野〜塩尻", km:18.2, def:473, coef:1802, rat:5.5, pass:490, diff:-73, lat:36.049, lng:137.975, coords:[[35.984,137.997],[36.115,137.954]] },
-      { id:51, line:"津軽線", sec:"青森〜中小国", km:31.4, def:1688, coef:3014, rat:3.3, pass:483, diff:-96, lat:40.944, lng:140.654, coords:[[40.829,140.733],[41.059,140.575]] },
-      { id:52, line:"津軽線", sec:"中小国〜三厩", km:24.4, def:366, coef:13520, rat:0.7, pass:61, diff:-85, lat:41.125, lng:140.515, coords:[[41.059,140.575],[41.192,140.455]] },
-      { id:53, line:"八戸線", sec:"鮫〜久慈", km:53.1, def:1138, coef:1921, rat:5.2, pass:331, diff:-80, lat:40.363, lng:141.658, coords:[[40.536,141.545],[40.190,141.770]] },
-      { id:54, line:"花輪線", sec:"好摩〜荒屋新町", km:37.6, def:755, coef:1837, rat:5.4, pass:352, diff:-77, lat:40.011, lng:141.097, coords:[[39.897,141.182],[40.125,141.011]] },
-      { id:55, line:"花輪線", sec:"荒屋新町〜鹿角花輪", km:32.1, def:603, coef:10916, rat:0.9, pass:62, diff:-93, lat:40.156, lng:140.901, coords:[[40.125,141.011],[40.186,140.791]] },
-      { id:56, line:"花輪線", sec:"鹿角花輪〜大館", km:37.2, def:723, coef:2004, rat:5.0, pass:441, diff:-73, lat:40.236, lng:140.677, coords:[[40.186,140.791],[40.285,140.563]] },
-      { id:57, line:"磐越西線", sec:"会津若松〜喜多方", km:16.6, def:787, coef:988, rat:10.1, pass:1534, diff:-62, lat:37.578, lng:139.901, coords:[[37.508,139.930],[37.649,139.872]] },
-      { id:58, line:"磐越西線", sec:"喜多方〜野沢", km:25.0, def:975, coef:2802, rat:3.6, pass:398, diff:-80, lat:37.624, lng:139.771, coords:[[37.649,139.872],[37.600,139.670]] },
-      { id:59, line:"磐越西線", sec:"野沢〜津川", km:30.8, def:982, coef:9738, rat:1.0, pass:102, diff:-91, lat:37.641, lng:139.568, coords:[[37.600,139.670],[37.683,139.466]] },
-      { id:60, line:"磐越西線", sec:"津川〜五泉", km:28.7, def:1040, coef:3027, rat:3.3, pass:426, diff:-81, lat:37.708, lng:139.325, coords:[[37.683,139.466],[37.733,139.183]] },
-      { id:61, line:"磐越東線", sec:"いわき〜小野新町", km:40.1, def:731, coef:3021, rat:3.3, pass:216, diff:-79, lat:37.170, lng:140.762, coords:[[37.058,140.892],[37.283,140.633]] },
-      { id:62, line:"磐越東線", sec:"小野新町〜郡山", km:45.5, def:1006, coef:503, rat:19.9, pass:1896, diff:-48, lat:37.340, lng:140.511, coords:[[37.283,140.633],[37.397,140.388]] },
-      { id:63, line:"弥彦線", sec:"弥彦〜吉田", km:4.9, def:138, coef:1734, rat:5.8, pass:473, diff:-67, lat:37.697, lng:138.850, coords:[[37.705,138.827],[37.689,138.873]] },
-      { id:64, line:"山田線", sec:"盛岡〜上米内", km:9.9, def:206, coef:1841, rat:5.4, pass:227, diff:-73, lat:39.718, lng:141.179, coords:[[39.701,141.136],[39.736,141.222]] },
-      { id:65, line:"山田線", sec:"上米内〜宮古", km:92.2, def:1749, coef:5120, rat:2.0, pass:71, diff:-90, lat:39.688, lng:141.588, coords:[[39.736,141.222],[39.640,141.954]] },
-      { id:66, line:"米坂線", sec:"米沢〜今泉", km:23.0, def:539, coef:1941, rat:5.2, pass:539, diff:-73, lat:37.963, lng:140.075, coords:[[37.910,140.116],[38.016,140.033]] },
-      { id:67, line:"米坂線", sec:"今泉〜小国", km:35.3, def:481, coef:4312, rat:2.3, pass:136, diff:-84, lat:38.041, lng:139.891, coords:[[38.016,140.033],[38.066,139.750]] },
-      { id:68, line:"米坂線", sec:"小国〜坂町", km:32.4, def:340, coef:4524, rat:2.2, pass:86, diff:-90, lat:38.116, lng:139.591, coords:[[38.066,139.750],[38.166,139.433]] },
-      { id:69, line:"陸羽西線", sec:"新庄〜余目", km:43.0, def:767, coef:3297, rat:3.0, pass:129, diff:-94, lat:38.805, lng:140.100, coords:[[38.761,140.301],[38.850,139.900]] },
-      { id:70, line:"陸羽東線", sec:"古川〜鳴子温泉", km:35.5, def:1151, coef:1395, rat:7.2, pass:726, diff:-74, lat:38.657, lng:140.841, coords:[[38.571,140.966],[38.744,140.716]] },
-      { id:71, line:"陸羽東線", sec:"鳴子温泉〜最上", km:20.7, def:439, coef:13465, rat:0.7, pass:51, diff:-89, lat:38.750, lng:140.616, coords:[[38.744,140.716],[38.755,140.516]] },
-      { id:72, line:"陸羽東線", sec:"最上〜新庄", km:28.5, def:562, coef:3002, rat:3.3, pass:229, diff:-82, lat:38.758, lng:140.409, coords:[[38.755,140.516],[38.761,140.301]] }
-    ];
-
-    function getColor(pass) {
-      if (pass < 500) return '#ef4444';
-      if (pass < 1000) return '#f97316';
-      return '#eab308';
-    }
-
-    const map = L.map('map').setView([38.2, 139.8], 6);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap'
-    }).addTo(map);
-
-    const markers = {};
-
-    DATA72.forEach(item => {
-      const color = getColor(item.pass);
-
-      const poly = L.polyline(item.coords, {
-        color: color,
-        weight: 6,
-        opacity: 0.85
-      }).addTo(map);
-
-      const marker = L.circleMarker([item.lat, item.lng], {
-        radius: 7,
-        fillColor: color,
-        color: '#ffffff',
-        weight: 2,
-        opacity: 1,
-        fillOpacity: 0.95
-      }).addTo(map);
-
-      const popupHtml = `
-        <div style="font-size:0.95rem; font-weight:bold; margin-bottom:4px;">No.${item.id} ${item.line}</div>
-        <div style="font-size:0.8rem; color:#cbd5e1; margin-bottom:6px;">${item.sec} (${item.km}km)</div>
-        <div style="font-size:0.85rem; line-height:1.4;">
-          <strong>営業係数:</strong> <span style="color:${color}; font-weight:bold;">${item.coef.toLocaleString()} 円</span><br>
-          <strong>赤字額:</strong> ▲${item.def.toLocaleString()} 百万円<br>
-          <strong>収支率:</strong> ${item.rat}%<br>
-          <strong>輸送密度:</strong> ${item.pass} 人/日 (${item.diff}%)
-        </div>
-      `;
-      marker.bindPopup(popupHtml);
-      poly.bindPopup(popupHtml);
-
-      const onSelect = () => {
-        selectLine(item);
-        marker.openPopup();
-      };
-      marker.on('click', onSelect);
-      poly.on('click', onSelect);
-
-      markers[item.id] = marker;
-    });
-
-    function selectLine(item) {
-      const color = getColor(item.pass);
-      document.getElementById('detailView').innerHTML = `
-        <h2>${item.line} (No.${item.id})</h2>
-        <div style="font-size:0.85rem; color:#cbd5e1; margin-bottom:6px;">${item.sec} (${item.km}km)</div>
-        <div class="stat-row">
-          <span>営業係数:</span>
-          <span class="stat-val" style="color:${color}; font-size:1.15rem;">${item.coef.toLocaleString()} 円</span>
-        </div>
-        <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:6px;">（100円稼ぐのにかかった費用）</div>
-        <div class="stat-row">
-          <span>年間赤字額:</span>
-          <span class="stat-val">▲${item.def.toLocaleString()} 百万円</span>
-        </div>
-        <div class="stat-row">
-          <span>収支率:</span>
-          <span class="stat-val">${item.rat}%</span>
-        </div>
-        <div class="stat-row">
-          <span>2023年輸送密度:</span>
-          <span class="stat-val">${item.pass.toLocaleString()} 人/日</span>
-        </div>
-        <div class="stat-row">
-          <span>1987年比:</span>
-          <span class="stat-val" style="color:#ef4444;">${item.diff}%</span>
-        </div>
-      `;
-
-      document.querySelectorAll('.item-card').forEach(c => {
-        c.classList.remove('active');
-        if (c.dataset.id == item.id) {
-          c.classList.add('active');
-          c.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-      });
-    }
-
-    function updateList() {
-      const q = document.getElementById('searchBox').value.trim();
-      const sort = document.getElementById('sortSelect').value;
-
-      let list = [...DATA72];
-
-      if (q) {
-        list = list.filter(d => d.line.includes(q) || d.sec.includes(q));
-      }
-
-      if (sort === 'coef_desc') list.sort((a,b) => b.coef - a.coef);
-      else if (sort === 'def_desc') list.sort((a,b) => b.def - a.def);
-      else if (sort === 'pass_asc') list.sort((a,b) => a.pass - b.pass);
-      else if (sort === 'id_asc') list.sort((a,b) => a.id - b.id);
-
-      const box = document.getElementById('itemList');
-      box.innerHTML = '';
-      list.forEach(item => {
-        const color = getColor(item.pass);
-        const card = document.createElement('div');
-        card.className = 'item-card';
-        card.dataset.id = item.id;
-        card.innerHTML = `
-          <div class="item-header">
-            <span>No.${item.id} ${item.line}</span>
-            <span style="color:${color}; font-weight:bold;">${item.coef.toLocaleString()}円</span>
-          </div>
-          <div style="color:#94a3b8; font-size:0.75rem;">${item.sec} (赤字: ▲${item.def}百万円)</div>
-        `;
-        card.onclick = () => {
-          selectLine(item);
-          map.flyTo([item.lat, item.lng], 8);
-          markers[item.id].openPopup();
-        };
-        box.appendChild(card);
-      });
-    }
-
-    updateList();
-    selectLine(DATA72[30]); // 初期選択：久留里線 (No.31)
-  </script>
-</body>
-</html>
+      { id:12, line:"羽越本線", sec:"羽後本荘〜秋田", km:42.8,
