@@ -1,183 +1,295 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JR東日本 赤字線区ダッシュボード (全72区間・2023年度)</title>
-  
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
+  <title>全国鉄道駅 周辺スポットナビ（JR・私鉄・地下鉄）</title>
   <style>
-    * { box-sizing: border-box; }
+    :root {
+      --primary: #008000;
+      --primary-hover: #006400;
+      --primary-light: #ecfdf5;
+      --accent: #047857;
+      --bg: #f3f4f6;
+      --card-bg: #ffffff;
+      --text: #1f2937;
+      --text-sub: #4b5563;
+      --border: #d1d5db;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      margin: 0;
-      padding: 12px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #0f172a;
-      color: #f8fafc;
-    }
-    .wrapper { max-width: 1300px; margin: 0 auto; }
-    header {
-      background: #1e293b;
-      padding: 12px 16px;
-      border-radius: 10px;
-      border: 1px solid #334155;
-      margin-bottom: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Sans", "Meiryo", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px 12px;
       display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
+      justify-content: center;
+      min-height: 100vh;
     }
-    h1 { font-size: 1.1rem; margin: 0; }
-    .legend {
-      display: flex;
-      gap: 12px;
-      font-size: 0.8rem;
-    }
-    .legend-item { display: flex; align-items: center; gap: 4px; }
-    .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
-
-    .main-grid {
-      display: grid;
-      grid-template-columns: 1fr 380px;
-      gap: 12px;
-    }
-    @media (max-width: 860px) {
-      .main-grid { grid-template-columns: 1fr; }
-    }
-
-    .panel {
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 10px;
-      padding: 12px;
-    }
-
-    #map {
+    .container {
       width: 100%;
-      height: 580px;
-      border-radius: 8px;
-      border: 1px solid #334155;
-      background: #0f172a;
+      max-width: 580px;
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 26px 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      border: 1px solid #e5e7eb;
     }
-
-    #detailView {
-      background: #0f172a;
-      border: 2px solid #38bdf8;
-      border-radius: 8px;
-      padding: 14px;
-      margin-bottom: 10px;
+    .badge {
+      display: inline-block;
+      background: var(--primary-light);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 4px;
+      margin-bottom: 12px;
     }
-    #detailView h2 { margin: 0 0 4px 0; font-size: 1.1rem; color: #38bdf8; }
-    .stat-row { display: flex; justify-content: space-between; margin: 5px 0; font-size: 0.85rem; }
-    .stat-val { font-weight: bold; }
-
-    .controls {
-      display: flex;
-      gap: 6px;
+    h1 {
+      font-size: 20px;
+      color: var(--primary);
       margin-bottom: 8px;
+      line-height: 1.4;
     }
-    .search-input {
-      flex: 1;
-      background: #0f172a;
-      border: 1px solid #475569;
-      color: #fff;
-      padding: 7px 10px;
-      border-radius: 6px;
-      font-size: 0.85rem;
+    p.desc {
+      font-size: 13px;
+      color: var(--text-sub);
+      line-height: 1.6;
+      margin-bottom: 22px;
     }
-    .sort-select {
-      background: #0f172a;
-      border: 1px solid #475569;
-      color: #fff;
-      padding: 7px 8px;
-      border-radius: 6px;
-      font-size: 0.8rem;
+    .form-group {
+      margin-bottom: 18px;
     }
-
-    .list-box {
-      max-height: 330px;
-      overflow-y: auto;
-      padding-right: 4px;
-    }
-    .item-card {
-      background: #0f172a;
-      border: 1px solid #334155;
-      padding: 8px 10px;
-      border-radius: 6px;
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
       margin-bottom: 6px;
+      color: var(--text);
+    }
+    select, input[type="text"] {
+      width: 100%;
+      padding: 13px 14px;
+      font-size: 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      outline: none;
+      background: #ffffff;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    select {
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 16px;
+    }
+    select:focus, input[type="text"]:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0, 128, 0, 0.15);
+    }
+    select:disabled, input:disabled {
+      background-color: #f3f4f6;
+      color: #9ca3af;
+      cursor: not-allowed;
+      border-color: #e5e7eb;
+    }
+    .station-count {
+      font-size: 11px;
+      color: var(--text-sub);
+      margin-top: 5px;
+      min-height: 16px;
+    }
+    .btn-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 24px;
+    }
+    .btn {
+      padding: 14px 10px;
+      font-size: 14px;
+      font-weight: 700;
+      border-radius: 10px;
+      border: none;
       cursor: pointer;
-      font-size: 0.8rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transition: background-color 0.2s, transform 0.1s;
+      touch-action: manipulation;
     }
-    .item-card:hover, .item-card.active {
-      border-color: #38bdf8;
-      background: #1e293b;
+    .btn-main {
+      background: var(--primary);
+      color: #ffffff;
+      grid-column: span 2;
+      font-size: 16px;
+      padding: 15px 12px;
+      box-shadow: 0 2px 8px rgba(0, 128, 0, 0.25);
     }
-    .item-header { display: flex; justify-content: space-between; font-weight: bold; }
-
-    .leaflet-popup-content-wrapper {
-      background: #1e293b !important;
-      color: #f8fafc !important;
-      border-radius: 8px;
-      border: 1px solid #475569;
+    .btn-main:active:not(:disabled) {
+      background: var(--primary-hover);
+      transform: scale(0.98);
     }
-    .leaflet-popup-tip { background: #1e293b !important; }
+    .btn-sub {
+      background: #f0fdf4;
+      color: var(--primary);
+      border: 1px solid #bbf7d0;
+    }
+    .btn-sub:active:not(:disabled) {
+      background: #dcfce7;
+      transform: scale(0.98);
+    }
+    .btn:disabled {
+      background: #e5e7eb !important;
+      color: #9ca3af !important;
+      border: none !important;
+      box-shadow: none !important;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    .footer-note {
+      margin-top: 22px;
+      text-align: center;
+      font-size: 11px;
+      color: #9ca3af;
+    }
   </style>
 </head>
 <body>
 
-  <div class="wrapper">
-    <header>
-      <h1>JR東日本 赤字線区ダッシュボード (全72区間・2023年度)</h1>
-      <div class="legend">
-        <div class="legend-item"><span class="dot" style="background:#ef4444;"></span> 500人未満</div>
-        <div class="legend-item"><span class="dot" style="background:#f97316;"></span> 500〜1,000人</div>
-        <div class="legend-item"><span class="dot" style="background:#eab308;"></span> 1,000〜2,000人</div>
-      </div>
-    </header>
+<div class="container">
+  <span class="badge">OB会・同窓会サポートツール</span>
+  <h1>全国鉄道駅 周辺スポットナビ</h1>
+  <p class="desc">
+    都道府県を選択後、駅名を入力してください（JR各線・私鉄・地下鉄全線対応）。<br>
+    駅周辺の観光名所・バス停・カフェ・ホテル情報をワンタップでGoogleマップ検索できます。
+  </p>
 
-    <div class="main-grid">
-      <div class="panel">
-        <div id="map"></div>
-      </div>
-
-      <div class="panel">
-        <div id="detailView">
-          <h2>路線を選択してください</h2>
-          <div style="font-size:0.85rem; color:#94a3b8;">地図のピン・路線、または下のリストをタップしてください。</div>
-        </div>
-
-        <div class="controls">
-          <input type="text" class="search-input" id="searchBox" placeholder="路線名・駅名で検索..." oninput="updateList()">
-          <select class="sort-select" id="sortSelect" onchange="updateList()">
-            <option value="coef_desc">営業係数ワースト順</option>
-            <option value="def_desc">赤字額が大きい順</option>
-            <option value="pass_asc">輸送密度が低い順</option>
-            <option value="id_asc">区間番号順 (No.1〜72)</option>
-          </select>
-        </div>
-
-        <div class="list-box" id="itemList"></div>
-      </div>
-    </div>
+  <!-- 1. 都道府県選択 -->
+  <div class="form-group">
+    <label for="prefSelect">① 都道府県を選択</label>
+    <select id="prefSelect" onchange="onPrefChange()">
+      <option value="">都道府県を選択してください</option>
+    </select>
   </div>
 
-  <script>
-    const DATA72 = [
-      { id:1, line:"吾妻線", sec:"長野原草津口〜大前", km:13.3, def:494, coef:2870, rat:3.5, pass:260, diff:-67, lat:36.529, lng:138.582, coords:[[36.549,138.650],[36.509,138.514]] },
-      { id:2, line:"左沢線", sec:"寒河江〜左沢", km:9.0, def:401, coef:2087, rat:4.8, pass:782, diff:-42, lat:38.381, lng:140.230, coords:[[38.379,140.280],[38.384,140.180]] },
-      { id:3, line:"飯山線", sec:"豊野〜飯山", km:19.2, def:685, coef:839, rat:11.9, pass:1398, diff:-58, lat:36.775, lng:138.325, coords:[[36.699,138.286],[36.852,138.365]] },
-      { id:4, line:"飯山線", sec:"飯山〜戸狩野沢温泉", km:8.3, def:307, coef:2695, rat:3.7, pass:414, diff:-81, lat:36.885, lng:138.381, coords:[[36.852,138.365],[36.918,138.397]] },
-      { id:5, line:"飯山線", sec:"戸狩野沢温泉〜津南", km:30.4, def:891, coef:10316, rat:1.0, pass:84, diff:-90, lat:36.964, lng:138.524, coords:[[36.918,138.397],[37.009,138.651]] },
-      { id:6, line:"飯山線", sec:"津南〜越後川口", km:38.8, def:878, coef:2117, rat:4.7, pass:342, diff:-64, lat:37.141, lng:138.763, coords:[[37.009,138.651],[37.273,138.874]] },
-      { id:7, line:"石巻線", sec:"小牛田〜女川", km:44.7, def:1153, coef:978, rat:10.2, pass:940, diff:-71, lat:38.493, lng:141.254, coords:[[38.541,141.065],[38.445,141.442]] },
-      { id:8, line:"羽越本線", sec:"新津〜新発田", km:26.0, def:1085, coef:1346, rat:7.4, pass:1257, diff:-82, lat:37.883, lng:139.225, coords:[[37.820,139.117],[37.947,139.333]] },
-      { id:9, line:"羽越本線", sec:"村上〜鶴岡", km:80.0, def:4968, coef:945, rat:10.6, pass:1423, diff:-75, lat:38.476, lng:139.649, coords:[[38.224,139.475],[38.728,139.824]] },
-      { id:10, line:"羽越本線", sec:"鶴岡〜酒田", km:27.5, def:1675, coef:735, rat:13.6, pass:1736, diff:-72, lat:38.825, lng:139.836, coords:[[38.728,139.824],[38.922,139.849]] },
-      { id:11, line:"羽越本線", sec:"酒田〜羽後本荘", km:62.0, def:2805, coef:1596, rat:6.3, pass:777, diff:-82, lat:39.155, lng:139.951, coords:[[38.922,139.849],[39.387,140.052]] },
-      { id:12, line:"羽越本線", sec:"羽後本荘〜秋田", km:42.8, def:1857, coef:673, rat:14.9, pass:1943, diff:-65, lat:39.552, lng:140.091, coords:[[39.387,140.052],[39.716,140.129]] },
-      { id:13, line:"内房線", sec:"館山〜安房鴨川", km:33.5, def:1541, coef:1289, rat:7.8, pass:1381, diff:-70, lat:35.052, lng:139.981, coords:[[34.996,139.860],[35.109,140.103]] },
-      { id:14, line:"越後線", sec:"柏崎〜吉田", km:49.8, def:1046, coef:1332, rat:7.5, pass:629, diff:-66, lat:37.528, lng:138.716, coords:[[37.368,138.560],[37.689,138.873]] },
-      { id:15, line:"奥羽本線", sec:"新庄〜湯沢", km:61.8, def:1581, coef:2544, rat:3.9, pass:291, diff:-93, lat:38.962, lng:140.397
+  <!-- 2. 駅名入力 -->
+  <div class="form-group">
+    <label for="stationInput">② 駅名を入力（候補から選択）</label>
+    <input type="text" id="stationInput" list="stationList" placeholder="先に都道府県を選択してください" disabled oninput="onStationInput()">
+    <datalist id="stationList"></datalist>
+    <div class="station-count" id="stationCountText"></div>
+  </div>
+
+  <!-- 3. 周辺検索ボタン群 -->
+  <div class="btn-grid">
+    <button class="btn btn-main" id="btnMain" disabled onclick="openMap('周辺 スポット')">📍 周辺スポット全体を見る</button>
+    <button class="btn btn-sub" id="btnSightseeing" disabled onclick="openMap('観光スポット 名所')">🏛️ 観光・名所旧跡</button>
+    <button class="btn btn-sub" id="btnBus" disabled onclick="openMap('バス停')">🚌 バス停・のりば</button>
+    <button class="btn btn-sub" id="btnCafe" disabled onclick="openMap('カフェ 喫茶店')">☕ カフェ・休憩</button>
+    <button class="btn btn-sub" id="btnGourmet" disabled onclick="openMap('ランチ 居酒屋 グルメ')">🍽️ グルメ・食事</button>
+    <button class="btn btn-sub" id="btnHotel" disabled onclick="openMap('ホテル 宿泊')">🏨 周辺ホテル</button>
+    <button class="btn btn-sub" id="btnConvenience" disabled onclick="openMap('コンビニ')">🏪 コンビニ</button>
+  </div>
+
+  <div class="footer-note">
+    ※ JR各線・私鉄・公営地下鉄・第三セクターに対応しています。
+  </div>
+</div>
+
+<script>
+const prefectures = [
+  "北海道", "青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県",
+  "茨城県", "栃木県", "群馬県", "埼玉県", "千葉県", "東京都", "神奈川県",
+  "新潟県", "富山県", "石川県", "福井県", "山梨県", "長野県", "岐阜県",
+  "静岡県", "愛知県", "三重県", "滋賀県", "京都府", "大阪府", "兵庫県",
+  "奈良県", "和歌山県", "鳥取県", "島根県", "岡山県", "広島県", "山口県",
+  "徳島県", "香川県", "愛媛県", "高知県", "福岡県", "佐賀県", "長崎県",
+  "熊本県", "大分県", "宮崎県", "鹿児島県", "沖縄県"
+];
+
+let stationData = {};
+
+window.addEventListener("DOMContentLoaded", () => {
+  const prefSelect = document.getElementById("prefSelect");
+  prefectures.forEach(pref => {
+    const opt = document.createElement("option");
+    opt.value = pref;
+    opt.textContent = pref;
+    prefSelect.appendChild(opt);
+  });
+
+  fetch("stations.json")
+    .then(res => res.json())
+    .then(data => {
+      stationData = data;
+    })
+    .catch(err => {
+      console.warn("stations.json の読み込みに失敗しました:", err);
+    });
+});
+
+function onPrefChange() {
+  const pref = document.getElementById("prefSelect").value;
+  const input = document.getElementById("stationInput");
+  const datalist = document.getElementById("stationList");
+  const countText = document.getElementById("stationCountText");
+
+  datalist.innerHTML = "";
+  input.value = "";
+  setButtons(false);
+
+  if (!pref) {
+    input.disabled = true;
+    input.placeholder = "先に都道府県を選択してください";
+    countText.textContent = "";
+    return;
+  }
+
+  const list = stationData[pref] || [];
+  list.forEach(st => {
+    const opt = document.createElement("option");
+    opt.value = st;
+    datalist.appendChild(opt);
+  });
+
+  input.disabled = false;
+  input.placeholder = `${pref}の駅名を入力（例：${list[0] || "八王子"}）`;
+  countText.textContent = `${pref}内の駅数：約${list.length}駅`;
+  input.focus();
+}
+
+function onStationInput() {
+  const val = document.getElementById("stationInput").value.trim();
+  setButtons(val.length > 0);
+}
+
+function setButtons(enabled) {
+  const ids = ["btnMain", "btnSightseeing", "btnBus", "btnCafe", "btnGourmet", "btnHotel", "btnConvenience"];
+  ids.forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.disabled = !enabled;
+  });
+}
+
+function openMap(category) {
+  const pref = document.getElementById("prefSelect").value;
+  let station = document.getElementById("stationInput").value.trim();
+  if (!station) return;
+
+  if (!station.endsWith("駅")) {
+    station += "駅";
+  }
+
+  // 「都道府県 駅名 目的スポット」で正確にスポット一覧を検索（経路検索の誤作動を防止）
+  const query = encodeURIComponent(`${pref} ${station} ${category}`);
+  const url = `https://www.google.com/maps/search/?api=1&query=${query}`;
+  window.open(url, "_blank");
+}
+</script>
+
+</body>
+</html>
